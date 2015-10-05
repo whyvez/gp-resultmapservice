@@ -94,9 +94,6 @@
         angular
             .module('myapp', [])
             .constant('GP_URL', 'http://sampleserver6.arcgisonline.com/arcgis/rest/services/911CallsHotspot/GPServer/911%20Calls%20Hotspot')
-            .run(function () {
-                // parser.parse();
-            })
             .controller('myctlr', function ($scope, GP_URL) {
                 $scope.gpServiceUrl = GP_URL;
                 var legend;
@@ -167,7 +164,7 @@
                 });
 
             })
-            .directive('gpform', function () {
+            .directive('gpform', function ($http) {
                 return {
                     restrict: 'E',
                     replace: true,
@@ -179,15 +176,23 @@
                         $scope.$watch(attrs.gpUrl, function(url) {
                             if(url && !gp) {
                                 gp = new Geoprocessor(url);
-                                $scope.isReady = true;
-                                $scope.$emit('gpReady');
+                                $http.get(url, {params: {f: 'pjson'} })
+                                    .then(function (res) {
+                                        var info = res.data;
+                                        $scope.inputParams = info.parameters.filter(function (p) {
+                                            return p.direction === 'esriGPParameterDirectionInput';
+                                        });
+                                        $scope.isReady = true;
+                                        $scope.$emit('gpReady');
+                                    });
                             }
                         });
 
                         $scope.invoke = function (){
-                            var params = {
-                              Query: buildDefinitionQuery()
-                            };
+                            var params = $scope.inputParams.reduce(function (memo, p) {
+                                memo[p.name] = p.value;
+                                return memo;
+                            }, {});
 
                             $scope.$emit('gpBeforeInvoke');
 
@@ -209,36 +214,13 @@
                             $scope.$emit('gpJobFailed', error);
                         }
 
-                        function buildDefinitionQuery(){
-                            var defQuery;
-                            //get input info from form and build definition expression
-                            var startDate = locale.format(registry.byId('fromDate').value, {
-                                datePattern: 'yyyy-MM-dd hh:mm:ss',
-                                selector: 'date'
-                            });
-                            var endDate = locale.format(registry.byId('toDate').value, {
-                                datePattern: 'yyyy-MM-dd hh:mm:ss',
-                                selector: 'date'
-                            });
-                            var def = [];
-
-                            def.push("(Date >= date '" + startDate + "' and Date <= date '" + endDate + "')");            
-                            def.push("(Day = 'SUN' OR Day= 'SAT' OR Day = 'FRI' OR Day ='MON' OR Day='TUE' OR Day='WED' OR Day ='THU')");
-
-                            if (def.length > 1) {
-                                defQuery = def.join(' AND ');
-                            }
-
-                            return defQuery;
-                        }
-
                     }
                 };
             }); 
 
-    angular.bootstrap(document.body, ['myapp']);
+        angular.bootstrap(document.body, ['myapp']);
         
-});
+    });
 
     </script>
 </body>

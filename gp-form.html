@@ -1,16 +1,9 @@
 <div id="info">
   <div style="padding-bottom:20px;width:40px">
-    <label for="fromDate">From:</label>
-    <br/>
-    <input type="text" name="fromDate" id="fromDate" value="1998-01-01" dojoType="dijit.form.DateTextBox"
-        required="true" constraints="{min:'1998-01-01',max:'1998-05-31'}" onChange="dijit.byId('toDate').constraints.min = arguments[0];"/>
-    <br/>
-    <label for="toDate">To:</label>
-    <br/>
-    <input type="text" name="toDate" id="toDate" value="1998-01-07" dojoType="dijit.form.DateTextBox"
-        required="true" constraints="{min:'1998-01-01',max:'1998-05-31'}" />
+    <div ng-repeat="inputParam in inputParams">
+      <label>{{inputParam.name}}:</label>
+      <input ng-model="inputParam.value"/>
   </div>
-
   <div align="center">
     <button id="hotspotButton" ng-click="invoke()">Analyze 911 Calls</button>
   </div>
